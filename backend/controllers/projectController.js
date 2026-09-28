@@ -59,7 +59,7 @@ const uploadTender = async (req, res, next) => {
     const project = await Project.findById(req.params.id);
     if (!project) return sendError(res, 'Project not found', 404);
     
-    if (project.owner.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (project.owner.toString() !== req.user._id.toString() && req.user.role !== 'admin' && req.user.role !== 'dept_officer') {
       return sendError(res, 'Not authorized', 403);
     }
 
@@ -131,7 +131,7 @@ const selectBid = async (req, res, next) => {
     const project = await Project.findById(req.params.id);
     if (!project) return sendError(res, 'Project not found', 404);
     
-    if (project.owner.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (project.owner.toString() !== req.user._id.toString() && req.user.role !== 'admin' && req.user.role !== 'dept_officer') {
       return sendError(res, 'Not authorized', 403);
     }
 
