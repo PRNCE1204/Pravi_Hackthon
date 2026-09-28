@@ -229,9 +229,15 @@ function TabTenders({ projects, reload }) {
   };
 
   const handleSelectBid = async (projectId, bidId) => {
-    await selectBid(projectId, bidId);
-    reload();
-    setSelectedProject(null);
+    try {
+      await selectBid(projectId, bidId);
+      reload();
+      setSelectedProject(null);
+      alert("Bid approved successfully! Project is now assigned to the contractor.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to approve bid: " + (err.response?.data?.message || err.message));
+    }
   };
 
   // Combine live active tenders with dummy tenders
@@ -311,9 +317,9 @@ function TabTenders({ projects, reload }) {
                     <p className="text-[10px] font-bold text-slate-500 mt-1">Status: {bid.status}</p>
                   </div>
                   <div>
-                    {(selectedProject.status === 'Tender Open' || selectedProject.status === 'Open') && bid.status === 'Pending' && (
+                    {((selectedProject.status === 'Tender Open' || selectedProject.status === 'Open') && bid.status === 'Pending') || (selectedProject.status === 'Contractor Pending Approval') ? (
                       <button onClick={() => handleSelectBid(selectedProject._id, bid._id)} className="px-4 py-2 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 shadow">Approve Bid</button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               ))}
