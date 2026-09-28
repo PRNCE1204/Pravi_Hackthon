@@ -211,12 +211,21 @@ function TabTenders({ projects, reload }) {
 
   const handleUploadTender = async (id, e) => {
     e.stopPropagation();
-    if (!tenderFile) return alert("Select a PDF file first");
-    const fd = new FormData();
-    fd.append('tenderDocument', tenderFile);
-    await uploadTender(id, fd);
-    setTenderFile(null);
-    reload();
+    if (!tenderFile) {
+      alert("Please select a file first using the 'Choose File' button.");
+      return;
+    }
+    try {
+      const fd = new FormData();
+      fd.append('tenderDocument', tenderFile);
+      await uploadTender(id, fd);
+      setTenderFile(null);
+      reload();
+      alert("Tender created and published to contractors successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to upload tender: " + (err.response?.data?.message || err.message));
+    }
   };
 
   const handleSelectBid = async (projectId, bidId) => {
@@ -256,9 +265,9 @@ function TabTenders({ projects, reload }) {
                  <td className="p-4 text-sm font-bold text-slate-400">Not Uploaded</td>
                  <td className="p-4"><span className="px-2 py-1 bg-amber-200 text-amber-800 text-[10px] font-bold rounded">{t.status}</span></td>
                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <input type="file" onChange={e => setTenderFile(e.target.files[0])} className="text-[10px] w-24" />
-                      <button onClick={(e) => handleUploadTender(t._id, e)} className="px-2 py-1 bg-emerald-500 text-white text-[10px] font-bold rounded">Create Tender</button>
+                    <div className="flex items-center gap-2 relative z-50">
+                      <input type="file" onChange={e => setTenderFile(e.target.files[0])} className="text-[10px] w-48" />
+                      <button type="button" onClick={(e) => handleUploadTender(t._id, e)} className="px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-bold rounded cursor-pointer hover:bg-emerald-600 hover:shadow-lg transition">Create Tender</button>
                     </div>
                  </td>
                </tr>
