@@ -12,6 +12,7 @@ const { seedUsers } = require('./seed/seedUsers');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
+const projectRoutes = require('./routes/projectRoutes');
 
 const app = express();
 
@@ -50,6 +51,9 @@ app.get('/api/health', (req, res) => {
 
 // Authentication & RBAC Routes
 app.use('/api/auth', authRoutes);
+
+// Project & Tendering Routes
+app.use('/api/projects', projectRoutes);
 
 // Role verification test route
 const { protect } = require('./middleware/authMiddleware');
