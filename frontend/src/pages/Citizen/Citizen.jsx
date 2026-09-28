@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+
+import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+L.Icon.Default.mergeOptions({ iconRetinaUrl: iconRetina, iconUrl: iconUrl, shadowUrl: shadowUrl });
+
 import StatCard from '../../components/dashboard/StatCard';
 import ProgressBar from '../../components/dashboard/ProgressBar';
 
@@ -15,9 +24,9 @@ const KPI_DATA = {
 };
 
 const NEARBY_PROJECTS = [
-  { id: 'RD-2026-001', name: 'NH-48 Highway Repair', dept: 'Roads Department', distance: '1.2 km', progress: 78, status: 'Active' },
-  { id: 'PK-2026-088', name: 'Central Park Reno', dept: 'Parks & Rec', distance: '0.8 km', progress: 100, status: 'Completed' },
-  { id: 'WT-2026-042', name: 'Sewage Line Upgrade', dept: 'Water Board', distance: '2.5 km', progress: 42, status: 'Active' },
+  { id: 'RD-2026-001', name: 'NH-48 Highway Repair', dept: 'Roads Department', distance: '1.2 km', progress: 78, status: 'Active', lat: 28.6139, lng: 77.2090 },
+  { id: 'PK-2026-088', name: 'Central Park Reno', dept: 'Parks & Rec', distance: '0.8 km', progress: 100, status: 'Completed', lat: 28.6120, lng: 77.2150 },
+  { id: 'WT-2026-042', name: 'Sewage Line Upgrade', dept: 'Water Board', distance: '2.5 km', progress: 42, status: 'Active', lat: 28.6200, lng: 77.2000 },
 ];
 
 const COMPLAINTS = [
@@ -220,59 +229,35 @@ function TabComplaints() {
   );
 }
 
-// 5. Project Tracker
-function TabTracker() {
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <h2 className="text-xl font-extrabold text-sky-950">Live Project Tracker</h2>
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-        <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-          <div>
-            <h3 className="text-lg font-extrabold text-sky-950">NH-48 Highway Repair</h3>
-            <p className="text-sm text-slate-500 font-bold">Sector 5 • Roads Department</p>
-          </div>
-          <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-lg">Engineer Verified</span>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
-            <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Progress</p>
-            <p className="text-2xl font-black text-emerald-600">78%</p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
-            <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Last Updated</p>
-            <p className="text-lg font-black text-sky-900">Today</p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
-            <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Workers On Site</p>
-            <p className="text-lg font-black text-sky-900">24</p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
-            <p className="text-[10px] uppercase font-bold text-slate-500 mb-1">Est. Completion</p>
-            <p className="text-lg font-black text-sky-900">15 Oct</p>
-          </div>
-        </div>
-
-        <div>
-          <h4 className="text-sm font-extrabold text-sky-950 mb-3">Live Updates</h4>
-          <div className="space-y-3">
-            <div className="bg-sky-50 p-3 rounded-lg border border-sky-100 text-sm font-bold text-sky-900">✅ Asphalt laying completed on 2km stretch. (Today)</div>
-            <div className="bg-sky-50 p-3 rounded-lg border border-sky-100 text-sm font-bold text-sky-900">✅ Engineer Neha Verma approved phase 2 inspection. (Yesterday)</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // 6. Map View
 function TabMap() {
+  const center = [28.6139, 77.2090];
   return (
-    <div className="space-y-6 flex flex-col items-center justify-center py-20 bg-slate-100 border border-slate-300 rounded-xl border-dashed">
-      <div className="text-5xl mb-4">🗺️</div>
+    <div className="space-y-6">
       <h2 className="text-xl font-extrabold text-sky-950">Interactive City Map</h2>
-      <p className="text-sm text-slate-500 mb-4 text-center max-w-md">Visualize all completed (Green), ongoing (Yellow), and delayed (Red) projects directly on the map.</p>
-      <button className="px-6 py-2.5 bg-sky-600 text-white font-bold rounded-lg hover:bg-sky-700 shadow">Load Map Data</button>
+      <p className="text-sm text-slate-500 mb-4">Visualize all completed (Green), ongoing (Yellow), and delayed (Red) projects directly on the map.</p>
+      <div className="h-[500px] w-full rounded-2xl overflow-hidden shadow-sm border border-sky-200 relative z-0">
+        <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {NEARBY_PROJECTS.map(proj => (
+            <Marker key={proj.id} position={[proj.lat, proj.lng]}>
+              <Popup>
+                <div className="p-1">
+                  <h4 className="font-extrabold text-sky-950">{proj.name}</h4>
+                  <p className="text-[10px] text-slate-500 mb-1">{proj.dept}</p>
+                  <p className="text-xs font-bold text-sky-700">Progress: {proj.progress}%</p>
+                  <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                    proj.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
+                  }`}>{proj.status}</span>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
     </div>
   );
 }
@@ -406,7 +391,6 @@ function Citizen() {
       {activeTab === 'nearby' && <TabNearby />}
       {activeTab === 'explorer' && <TabExplorer />}
       {activeTab === 'complaints' && <TabComplaints />}
-      {activeTab === 'tracker' && <TabTracker />}
       {activeTab === 'map' && <TabMap />}
       {activeTab === 'announcements' && <TabAnnouncements />}
       {activeTab === 'feedback' && <TabFeedback />}

@@ -23,7 +23,6 @@ const ROLE_NAV = {
     { label: 'Nearby Projects',       tab: 'nearby',         icon: '📍' },
     { label: 'Project Explorer',      tab: 'explorer',       icon: '🔍' },
     { label: 'My Complaints',         tab: 'complaints',     icon: '📋' },
-    { label: 'Project Tracker',       tab: 'tracker',        icon: '📈' },
     { label: 'Map View',              tab: 'map',            icon: '🗺️' },
     { label: 'Announcements',         tab: 'announcements',  icon: '📢' },
     { label: 'Feedback & Ratings',    tab: 'feedback',       icon: '⭐' },

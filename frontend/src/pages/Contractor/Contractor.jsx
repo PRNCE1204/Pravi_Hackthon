@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import StatCard from '../../components/dashboard/StatCard';
 import ProgressBar from '../../components/dashboard/ProgressBar';
+import { getProjects, submitBid } from '../../services/projectService';
 
 /* ════════════════════════════════════════════════════════════════
    DUMMY DATA
@@ -145,8 +146,10 @@ function TabOverview() {
 }
 
 // 2. My Projects
-function TabProjects() {
+function TabProjects({ projects }) {
   const [selectedProject, setSelectedProject] = useState(null);
+  const liveProjects = projects.filter(p => p.status === 'Assigned' || p.status === 'In Progress');
+  const allProjects = [...liveProjects, ...PROJECTS];
 
   return (
     <div className="space-y-6">
@@ -163,21 +166,21 @@ function TabProjects() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {PROJECTS.map(proj => (
-              <tr key={proj.id} onClick={() => setSelectedProject(proj)} className="hover:bg-slate-50 cursor-pointer">
+            {allProjects.map(proj => (
+              <tr key={proj.id || proj._id} onClick={() => proj._id ? null : setSelectedProject(proj)} className={proj._id ? "bg-amber-50" : "hover:bg-slate-50 cursor-pointer"}>
                 <td className="p-4">
-                  <div className="font-bold text-slate-800">{proj.name}</div>
-                  <div className="text-[10px] font-mono text-sky-600">{proj.id}</div>
+                  <div className="font-bold text-slate-800">{proj.name || proj.title}</div>
+                  <div className="text-[10px] font-mono text-sky-600">{proj.id || proj.projectId}</div>
                 </td>
-                <td className="p-4 text-sm font-bold text-slate-600">{proj.dept}</td>
-                <td className="p-4 text-sm font-bold text-slate-600">{proj.deadline}</td>
+                <td className="p-4 text-sm font-bold text-slate-600">{proj.dept || 'Roads'}</td>
+                <td className="p-4 text-sm font-bold text-slate-600">{proj.deadline || '-'}</td>
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded text-[10px] font-bold ${
                     proj.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 
                     proj.status === 'Delayed' ? 'bg-rose-100 text-rose-800' : 'bg-sky-100 text-sky-800'
                   }`}>{proj.status}</span>
                 </td>
-                <td className="p-4 w-32"><ProgressBar value={proj.progress} max={100} size="sm" colorVariant={proj.status === 'Delayed' ? 'rose' : 'emerald'} /></td>
+                <td className="p-4 w-32"><ProgressBar value={proj.progress || 0} max={100} size="sm" colorVariant={proj.status === 'Delayed' ? 'rose' : 'emerald'} /></td>
               </tr>
             ))}
           </tbody>
@@ -503,7 +506,25 @@ function TabDocuments() {
 }
 
 // 8.5 Tenders
-function TabTenders() {
+function TabTenders({ projects, reload }) {
+  const [selectedTender, setSelectedTender] = useState(null);
+  const [bidFile, setBidFile] = useState(null);
+  const [bidAmount, setBidAmount] = useState('');
+
+  const liveTenders = projects.filter(p => p.status === 'Tender Open');
+  const allTenders = [...liveTenders, ...TENDERS];
+
+  const handleApply = async (e) => {
+    e.preventDefault();
+    if (!bidFile || !bidAmount) return alert('Enter amount and PDF file');
+    const fd = new FormData();
+    fd.append('bidDocument', bidFile);
+    fd.append('bidAmount', bidAmount);
+    await submitBid(selectedTender._id, fd);
+    setSelectedTender(null);
+    reload();
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-extrabold text-sky-950">Apply for Tenders</h2>
@@ -520,18 +541,18 @@ function TabTenders() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {TENDERS.map(t => (
-              <tr key={t.id} className="hover:bg-slate-50">
+            {allTenders.map(t => (
+              <tr key={t.id || t._id} className={t._id ? "bg-emerald-50 hover:bg-emerald-100" : "hover:bg-slate-50"}>
                 <td className="p-4">
                   <div className="font-bold text-slate-800">{t.title}</div>
-                  <div className="text-[10px] font-mono text-slate-500">{t.id}</div>
+                  <div className="text-[10px] font-mono text-slate-500">{t.id || t.projectId}</div>
                 </td>
-                <td className="p-4 text-sm font-bold text-slate-600">{t.dept}</td>
+                <td className="p-4 text-sm font-bold text-slate-600">{t.dept || 'Roads'}</td>
                 <td className="p-4 font-black text-amber-600">{t.budget}</td>
                 <td className="p-4 text-xs font-bold text-slate-500">{t.deadline}</td>
                 <td className="p-4 text-center">
-                  {t.status === 'Open' ? (
-                    <button className="px-4 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 shadow-sm">Apply Now</button>
+                  {t.status === 'Open' || t.status === 'Tender Open' ? (
+                    <button onClick={() => setSelectedTender(t)} className="px-4 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 shadow-sm">Apply Now</button>
                   ) : (
                     <span className="px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold rounded-lg">Closed</span>
                   )}
@@ -541,6 +562,28 @@ function TabTenders() {
           </tbody>
         </table>
       </div>
+
+      {selectedTender && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-sky-950/70 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6">
+            <h3 className="text-xl font-extrabold text-sky-950 mb-4">Submit Bid for {selectedTender.title}</h3>
+            <form onSubmit={handleApply} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Bid Amount</label>
+                <input required className="w-full border p-2 rounded bg-slate-50" placeholder="e.g. ₹4.5 Cr" value={bidAmount} onChange={e=>setBidAmount(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Proposal PDF</label>
+                <input type="file" required className="w-full border p-2 rounded text-xs bg-slate-50" onChange={e=>setBidFile(e.target.files[0])} />
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <button type="button" onClick={() => setSelectedTender(null)} className="px-4 py-2 bg-slate-100 font-bold rounded">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-emerald-600 text-white font-bold rounded">Submit Bid</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -632,6 +675,21 @@ function Contractor() {
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'overview';
 
+  const [projects, setProjects] = useState([]);
+
+  const fetchProjects = async () => {
+    try {
+      const data = await getProjects();
+      setProjects(data.data.projects);
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchProjects();
+    const interval = setInterval(fetchProjects, 3000); // Live Polling
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Banner */}
@@ -660,14 +718,14 @@ function Contractor() {
 
       {/* Routing */}
       {activeTab === 'overview' && <TabOverview />}
-      {activeTab === 'projects' && <TabProjects />}
+      {activeTab === 'projects' && <TabProjects projects={projects} />}
       {activeTab === 'updates' && <TabUpdates />}
       {activeTab === 'tasks' && <TabTasks />}
       {activeTab === 'materials' && <TabMaterials />}
       {activeTab === 'workforce' && <TabWorkforce />}
       {activeTab === 'equipment' && <TabEquipment />}
       {activeTab === 'documents' && <TabDocuments />}
-      {activeTab === 'tenders' && <TabTenders />}
+      {activeTab === 'tenders' && <TabTenders projects={projects} reload={fetchProjects} />}
       {activeTab === 'bills' && <TabBills />}
       {activeTab === 'notifications' && <TabNotifications />}
       {activeTab === 'settings' && <TabSettings />}

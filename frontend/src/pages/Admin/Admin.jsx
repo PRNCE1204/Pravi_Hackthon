@@ -13,6 +13,7 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: iconRetina, iconUrl: iconUrl, shado
 import StatCard from '../../components/dashboard/StatCard';
 import ProgressBar from '../../components/dashboard/ProgressBar';
 import ActivityFeed from '../../components/dashboard/ActivityFeed';
+import { getProjects, approveTender, approveContractor } from '../../services/projectService';
 
 import img1 from '../../assets/images/1.webp';
 import img2 from '../../assets/images/2.webp';
@@ -1055,13 +1056,30 @@ function ProjectMapModal({ projects, onClose }) {
 }
 
 /* ── 5. PROJECT OVERSIGHT ──────────────────────────────────── */
-function TabProjects() {
+function TabProjects({ projects, reload }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showMap, setShowMap] = useState(false);
   const [selectedDetails, setSelectedDetails] = useState(null);
-  const statuses = ['all', 'In Progress', 'Completed', 'Delayed', 'Planned'];
-  const filtered = statusFilter === 'all' ? PROJECTS : PROJECTS.filter(p => p.status === statusFilter);
-  const counts = { all: PROJECTS.length, 'In Progress': 4, Completed: 2, Delayed: 1, Planned: 1 };
+  const statuses = ['all', 'In Progress', 'Completed', 'Delayed', 'Tender Pending Approval', 'Contractor Pending Approval'];
+  
+  const allProjects = [...(projects || []), ...PROJECTS];
+  const filtered = statusFilter === 'all' ? allProjects : allProjects.filter(p => p.status === statusFilter);
+
+  const handleApproveTender = async (e, id) => {
+    e.stopPropagation();
+    await approveTender(id);
+    reload();
+  };
+
+  const handleApproveContractor = async (e, id) => {
+    e.stopPropagation();
+    const proj = projects.find(p => p._id === id);
+    const pendingBid = proj.bids.find(b => b.status === 'Pending Approval');
+    if (pendingBid) {
+      await approveContractor(id, pendingBid._id);
+      reload();
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -1083,7 +1101,6 @@ function TabProjects() {
               statusFilter === s ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-slate-600 border-sky-100 hover:bg-sky-50'
             }`}>
             {s === 'all' ? 'All Projects' : s}
-            <span className="ml-1.5 text-[10px] opacity-70">({counts[s] || 0})</span>
           </button>
         ))}
       </div>
@@ -1105,29 +1122,28 @@ function TabProjects() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map(p => (
-                <tr key={p.id} onClick={() => setSelectedDetails(p)} className="hover:bg-sky-50 transition-colors cursor-pointer group">
+                <tr key={p.id || p._id} onClick={() => p._id ? null : setSelectedDetails(p)} className={p._id ? "bg-amber-50" : "hover:bg-sky-50 transition-colors cursor-pointer group"}>
                   <td className="px-5 py-4">
-                    <p className="font-bold text-slate-800 group-hover:text-sky-700 transition-colors">{p.name}</p>
-                    <p className="text-[10px] font-mono text-sky-600 mt-0.5">{p.id}</p>
+                    <p className="font-bold text-slate-800 group-hover:text-sky-700 transition-colors">{p.name || p.title}</p>
+                    <p className="text-[10px] font-mono text-sky-600 mt-0.5">{p.id || p.projectId}</p>
                   </td>
                   <td className="px-5 py-4">
-                    <span className="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded font-bold">{p.dept}</span>
+                    <span className="text-[10px] bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded font-bold">{p.dept || 'Roads'}</span>
                   </td>
                   <td className="px-5 py-4">
                     <div className="w-28">
-                      <ProgressBar value={p.progress} max={100}
-                        colorVariant={p.status === 'Delayed' ? 'rose' : p.progress === 100 ? 'emerald' : 'sky'} size="sm" showPercent={false} />
-                      <span className="text-[10px] font-bold text-sky-700">{p.progress}%</span>
+                      <ProgressBar value={p.progress || 0} max={100}
+                        colorVariant={p.status === 'Delayed' ? 'rose' : (p.progress === 100 ? 'emerald' : 'sky')} size="sm" showPercent={false} />
+                      <span className="text-[10px] font-bold text-sky-700">{p.progress || 0}%</span>
                     </div>
                   </td>
-                  <td className="px-5 py-4"><StatusBadge status={p.status} /></td>
+                  <td className="px-5 py-4"><span className="px-2 py-1 bg-sky-100 text-[10px] font-bold rounded text-sky-800">{p.status}</span></td>
                   <td className="px-5 py-4 font-bold text-amber-700">{p.budget}</td>
                   <td className="px-5 py-4">
-                    {p.delay > 0
-                      ? <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">+{p.delay} days</span>
-                      : <span className="text-[10px] font-bold text-emerald-700">On Track</span>}
+                    {p.status === 'Tender Pending Approval' && <button onClick={(e) => handleApproveTender(e, p._id)} className="px-3 py-1 bg-emerald-500 text-white rounded text-xs font-bold shadow">Approve Tender</button>}
+                    {p.status === 'Contractor Pending Approval' && <button onClick={(e) => handleApproveContractor(e, p._id)} className="px-3 py-1 bg-emerald-500 text-white rounded text-xs font-bold shadow">Approve Contractor</button>}
                   </td>
-                  <td className="px-5 py-4 text-slate-500 font-mono text-[10px]">{p.endDate}</td>
+                  <td className="px-5 py-4 text-slate-500 font-mono text-[10px]">{p.endDate || p.deadline || '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -1526,6 +1542,19 @@ function Admin() {
   const [searchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'overview';
 
+  const [projects, setProjects] = useState([]);
+  const fetchProjects = async () => {
+    try {
+      const data = await getProjects();
+      setProjects(data.data.projects);
+    } catch(err) {}
+  };
+  useEffect(() => {
+    fetchProjects();
+    const interval = setInterval(fetchProjects, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Welcome Banner — Dashboard only */}
@@ -1576,7 +1605,7 @@ function Admin() {
       {activeTab === 'feed'           && <TabFeed />}
       {activeTab === 'users'          && <TabUsers />}
       {activeTab === 'departments'    && <TabDepartments />}
-      {activeTab === 'projects'       && <TabProjects />}
+      {activeTab === 'projects'       && <TabProjects projects={projects} reload={fetchProjects} />}
       {activeTab === 'complaints'     && <TabComplaints />}
       {activeTab === 'finance'        && <TabFinance />}
       {activeTab === 'reports'        && <TabReports />}
