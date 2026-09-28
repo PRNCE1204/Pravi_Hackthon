@@ -507,6 +507,7 @@ function TabDocuments() {
 
 // 8.5 Tenders
 function TabTenders({ projects, reload }) {
+  const { user } = useAuth();
   const [selectedTender, setSelectedTender] = useState(null);
   const [bidFile, setBidFile] = useState(null);
   const [bidAmount, setBidAmount] = useState('');
@@ -567,7 +568,9 @@ function TabTenders({ projects, reload }) {
                 <td className="p-4 font-black text-amber-600">{t.budget}</td>
                 <td className="p-4 text-xs font-bold text-slate-500">{t.deadline}</td>
                 <td className="p-4 text-center">
-                  {t.status === 'Open' || t.status === 'Tender Open' ? (
+                  {t.bids?.some(b => b.contractorId === user?._id) ? (
+                    <span className="px-3 py-1 bg-sky-100 text-sky-700 border border-sky-200 text-xs font-bold rounded-lg">Applied</span>
+                  ) : t.status === 'Open' || t.status === 'Tender Open' ? (
                     <button onClick={() => setSelectedTender(t)} className="px-4 py-1.5 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 shadow-sm">Apply Now</button>
                   ) : (
                     <span className="px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold rounded-lg">Closed</span>
