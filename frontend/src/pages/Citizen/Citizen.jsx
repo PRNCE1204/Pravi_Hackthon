@@ -231,32 +231,92 @@ function TabComplaints() {
 
 // 6. Map View
 function TabMap() {
+  const [selectedProject, setSelectedProject] = useState(null);
   const center = [28.6139, 77.2090];
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-extrabold text-sky-950">Interactive City Map</h2>
-      <p className="text-sm text-slate-500 mb-4">Visualize all completed (Green), ongoing (Yellow), and delayed (Red) projects directly on the map.</p>
-      <div className="h-[500px] w-full rounded-2xl overflow-hidden shadow-sm border border-sky-200 relative z-0">
-        <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {NEARBY_PROJECTS.map(proj => (
-            <Marker key={proj.id} position={[proj.lat, proj.lng]}>
-              <Popup>
-                <div className="p-1">
-                  <h4 className="font-extrabold text-sky-950">{proj.name}</h4>
-                  <p className="text-[10px] text-slate-500 mb-1">{proj.dept}</p>
-                  <p className="text-xs font-bold text-sky-700">Progress: {proj.progress}%</p>
-                  <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold ${
-                    proj.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
-                  }`}>{proj.status}</span>
+      <p className="text-sm text-slate-500 mb-4">Click on project pins to view details about ongoing developments.</p>
+      
+      <div className="flex flex-col lg:flex-row gap-6 h-[500px]">
+        {/* Map */}
+        <div className={`transition-all duration-300 rounded-2xl overflow-hidden shadow-sm border border-sky-200 relative z-0 ${selectedProject ? 'w-full lg:w-2/3' : 'w-full'}`}>
+          <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
+            <TileLayer
+              attribution='&copy; OpenStreetMap'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {NEARBY_PROJECTS.map(proj => {
+              const emoji = {
+                'Roads Department': '🛣️',
+                'Parks & Rec': '🌳',
+                'Water Board': '🚰',
+              }[proj.dept] || '📍';
+              
+              const customIcon = L.divIcon({
+                className: 'custom-dept-icon',
+                html: `<div style="font-size: 24px; text-shadow: 0 2px 5px rgba(0,0,0,0.4); transform: translate(-20%, -20%);">${emoji}</div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+              });
+
+              return (
+                <Marker 
+                  key={proj.id} 
+                  position={[proj.lat, proj.lng]}
+                  icon={customIcon}
+                  eventHandlers={{ click: () => setSelectedProject(proj) }}
+                />
+              );
+            })}
+          </MapContainer>
+        </div>
+
+        {/* Details Panel */}
+        {selectedProject && (
+          <div className="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-sky-200 overflow-hidden flex flex-col h-full transition-all">
+            <div className="p-4 bg-sky-900 text-white flex justify-between items-start">
+              <div>
+                <span className="text-[10px] font-extrabold bg-sky-700 px-2 py-0.5 rounded uppercase">{selectedProject.id}</span>
+                <h3 className="text-lg font-extrabold mt-2 leading-tight">{selectedProject.name}</h3>
+              </div>
+              <button onClick={() => setSelectedProject(null)} className="text-sky-200 hover:text-white text-xl">✕</button>
+            </div>
+            
+            <div className="p-5 flex-1 overflow-y-auto space-y-5">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <span className="text-xs font-extrabold text-slate-500 uppercase">Status</span>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  selectedProject.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                }`}>{selectedProject.status}</span>
+              </div>
+              
+              <div>
+                <p className="text-[10px] font-extrabold text-slate-500 uppercase mb-1">Department</p>
+                <p className="text-sm font-bold text-sky-950">{selectedProject.dept}</p>
+              </div>
+              
+              <div>
+                <p className="text-[10px] font-extrabold text-slate-500 uppercase mb-1">Distance from you</p>
+                <p className="text-sm font-bold text-sky-950">{selectedProject.distance}</p>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-extrabold text-slate-500 uppercase mb-1">Progress</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="h-2 flex-1 bg-sky-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-sky-500 rounded-full transition-all" style={{ width: `${selectedProject.progress}%` }} />
+                  </div>
+                  <span className="text-xs font-bold text-sky-700">{selectedProject.progress}%</span>
                 </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+              </div>
+              
+              <button className="w-full py-2.5 bg-sky-50 text-sky-700 border border-sky-200 font-bold rounded-lg text-sm hover:bg-sky-100 transition mt-4">
+                View Full Summary
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
