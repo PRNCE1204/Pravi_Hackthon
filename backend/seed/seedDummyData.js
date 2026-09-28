@@ -80,6 +80,15 @@ const seedData = async () => {
     await Tender.deleteMany({});
     await Notification.deleteMany({});
     
+    const User = require('../models/User');
+    const defaultUser = await User.findOne() || { _id: new mongoose.Types.ObjectId() };
+    
+    const validNotifications = dummyNotifications.map(n => ({
+      recipient: defaultUser._id,
+      message: n.message,
+      type: 'info'
+    }));
+    
     // Insert dummy data
     await Complaint.insertMany(dummyComplaints);
     await FundRequest.insertMany(dummyFunds);
@@ -89,7 +98,7 @@ const seedData = async () => {
     await Payment.insertMany(dummyPayments);
     await Feedback.insertMany(dummyFeedbacks);
     await Tender.insertMany(dummyTenders);
-    await Notification.insertMany(dummyNotifications);
+    await Notification.insertMany(validNotifications);
     
     console.log('Dummy data seeded successfully for all 10 collections!');
     process.exit();
