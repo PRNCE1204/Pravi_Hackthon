@@ -516,13 +516,29 @@ function TabTenders({ projects, reload }) {
 
   const handleApply = async (e) => {
     e.preventDefault();
-    if (!bidFile || !bidAmount) return alert('Enter amount and PDF file');
-    const fd = new FormData();
-    fd.append('bidDocument', bidFile);
-    fd.append('bidAmount', bidAmount);
-    await submitBid(selectedTender._id, fd);
-    setSelectedTender(null);
-    reload();
+    if (!bidFile || !bidAmount) {
+      alert("Please enter a bid amount and select a proposal PDF file.");
+      return;
+    }
+    
+    try {
+      const fd = new FormData();
+      // The backend expects 'proposalDocument' for the file
+      fd.append('proposalDocument', bidFile);
+      fd.append('bidAmount', bidAmount);
+      // The backend expects 'companyName'
+      fd.append('companyName', 'Bharat Infratech Pvt Ltd'); // Using the contractor's dummy company name for now
+      
+      await submitBid(selectedTender._id, fd);
+      setSelectedTender(null);
+      setBidFile(null);
+      setBidAmount('');
+      reload();
+      alert("Bid submitted successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit bid: " + (err.response?.data?.message || err.message));
+    }
   };
 
   return (
