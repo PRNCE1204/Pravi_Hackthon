@@ -147,8 +147,12 @@ function TabOverview() {
 
 // 2. My Projects
 function TabProjects({ projects }) {
+  const { user } = useAuth();
   const [selectedProject, setSelectedProject] = useState(null);
-  const liveProjects = projects.filter(p => p.status === 'Assigned' || p.status === 'In Progress');
+  const liveProjects = projects.filter(p => 
+    (p.status === 'Assigned' || p.status === 'In Progress') && 
+    (p.assignedContractor?._id === user?._id || p.assignedContractor === user?._id)
+  );
   const allProjects = [...liveProjects, ...PROJECTS];
 
   return (

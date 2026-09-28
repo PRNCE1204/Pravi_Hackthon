@@ -139,11 +139,12 @@ const selectBid = async (req, res, next) => {
     const bid = project.bids.id(bidId);
     if (!bid) return sendError(res, 'Bid not found', 404);
 
-    bid.status = 'Selected by Officer';
-    project.status = 'Contractor Pending Approval';
+    bid.status = 'Approved';
+    project.assignedContractor = bid.contractorId;
+    project.status = 'Assigned';
     await project.save();
 
-    return sendSuccess(res, 'Bid selected, waiting for Admin approval', { project });
+    return sendSuccess(res, 'Bid approved and project assigned to contractor', { project });
   } catch (error) {
     next(error);
   }
