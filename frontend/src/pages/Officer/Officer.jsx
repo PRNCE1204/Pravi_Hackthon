@@ -172,7 +172,7 @@ function TabProjects({ projects, reload }) {
                   <span className={`px-2 py-1 rounded text-[10px] font-bold ${
                     proj.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 
                     proj.status === 'Delayed' ? 'bg-rose-100 text-rose-800' : 
-                    proj.status === 'Project Created' || proj.status === 'Pending Approval' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'
+                    proj.status === 'Pending' || proj.status === 'Pending Approval' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'
                   }`}>{proj.status}</span>
                 </td>
                 <td className="p-4"><ProgressBar value={proj.progress || 0} max={100} size="sm" colorVariant={proj.status === 'Delayed' ? 'rose' : 'emerald'} /></td>
@@ -226,7 +226,7 @@ function TabTenders({ projects, reload }) {
   };
 
   // Combine live active tenders with dummy tenders
-  const liveTenders = projects.filter(p => p.status !== 'Project Created' && p.status !== 'Planning');
+  const liveTenders = projects.filter(p => p.status !== 'Pending' && p.status !== 'Planning');
   const allTenders = [...liveTenders, ...DUMMY_TENDERS];
 
   return (
@@ -246,7 +246,7 @@ function TabTenders({ projects, reload }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {projects.filter(p => p.status === 'Project Created').map(t => (
+            {projects.filter(p => p.status === 'Pending').map(t => (
                <tr key={t._id} className="bg-amber-50 hover:bg-amber-100">
                  <td className="p-4">
                    <div className="font-bold text-slate-800">{t.title}</div>
@@ -258,7 +258,7 @@ function TabTenders({ projects, reload }) {
                  <td className="p-4">
                     <div className="flex items-center gap-2">
                       <input type="file" onChange={e => setTenderFile(e.target.files[0])} className="text-[10px] w-24" />
-                      <button onClick={(e) => handleUploadTender(t._id, e)} className="px-2 py-1 bg-emerald-500 text-white text-[10px] font-bold rounded">Upload Tender</button>
+                      <button onClick={(e) => handleUploadTender(t._id, e)} className="px-2 py-1 bg-emerald-500 text-white text-[10px] font-bold rounded">Create Tender</button>
                     </div>
                  </td>
                </tr>

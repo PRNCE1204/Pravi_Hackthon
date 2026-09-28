@@ -45,7 +45,7 @@ const createProject = async (req, res, next) => {
       budget,
       deadline,
       owner: req.user._id,
-      status: 'Project Created'
+      status: 'Pending'
     });
     return sendSuccess(res, 'Project created successfully', { project }, 201);
   } catch (error) {
@@ -67,10 +67,10 @@ const uploadTender = async (req, res, next) => {
     if (!tenderFile) return sendError(res, 'Tender document is required', 400);
 
     project.tenderDocument = tenderFile;
-    project.status = 'Tender Pending Approval';
+    project.status = 'Tender Open';
     await project.save();
 
-    return sendSuccess(res, 'Tender uploaded, pending admin approval', { project });
+    return sendSuccess(res, 'Tender created and published to contractors', { project });
   } catch (error) {
     next(error);
   }

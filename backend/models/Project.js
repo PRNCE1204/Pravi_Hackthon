@@ -78,6 +78,7 @@ const projectSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
+        'Pending', 
         'Project Created', 
         'Tender Pending Approval', 
         'Tender Open', 
@@ -86,7 +87,7 @@ const projectSchema = new mongoose.Schema(
         'In Progress', 
         'Completed'
       ],
-      default: 'Project Created',
+      default: 'Pending',
     },
     tenderDocument: {
       type: String,
