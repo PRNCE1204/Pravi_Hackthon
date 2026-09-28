@@ -382,6 +382,28 @@ function TabMap() {
                   </div>
                 </div>
               </div>
+
+              {/* Tracking / Timeline */}
+              <div>
+                <h4 className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-3">Recent Tracking Updates</h4>
+                <div className="relative pl-3 space-y-4 before:absolute before:inset-y-0 before:left-[3px] before:w-px before:bg-slate-200">
+                  <div className="relative">
+                    <span className="absolute -left-3 top-1 w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_white]" />
+                    <p className="text-xs font-bold text-slate-800">Foundation Phase 100% Complete</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Updated by Arjun Mehta (Contractor) • Today 11:20 AM</p>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute -left-3 top-1 w-1.5 h-1.5 rounded-full bg-sky-500 shadow-[0_0_0_4px_white]" />
+                    <p className="text-xs font-bold text-slate-800">Site Inspection Passed</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Updated by Neha Verma (QC) • Sep 25, 2026</p>
+                  </div>
+                  <div className="relative">
+                    <span className="absolute -left-3 top-1 w-1.5 h-1.5 rounded-full bg-sky-500 shadow-[0_0_0_4px_white]" />
+                    <p className="text-xs font-bold text-slate-800">Fund Tranche 2 Released (₹12 Cr)</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Updated by Treasury Dept • Sep 22, 2026</p>
+                  </div>
+                </div>
+              </div>
               
               <button className="w-full py-2.5 bg-sky-50 text-sky-700 border border-sky-200 font-bold rounded-lg text-sm hover:bg-sky-100 transition mt-4">
                 View Full Public Summary
