@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
 import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
@@ -229,29 +229,64 @@ function TabComplaints() {
   );
 }
 
+function MapFlyTo({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center && map) {
+      map.flyTo(center, 14, { duration: 1.5 });
+    }
+  }, [center, map]);
+  return null;
+}
+
 // 6. Map View
 function TabMap() {
+  const [selectedDept, setSelectedDept] = useState('All');
   const [selectedProject, setSelectedProject] = useState(null);
-  const center = [28.6139, 77.2090];
+  
+  // Base projects (using the same style as Admin)
+  const mapPins = [
+    { id: 'PRJ-2201', name: 'NH-48 6-Lane Highway Expansion', dept: 'Transport & Roads', status: 'In Progress', progress: 68, budget: '₹42.5 Cr', officer: 'Vikram Singh', lat: 23.0335, lng: 72.5814 },
+    { id: 'PRJ-2189', name: 'Municipal Sewage Treatment Plant', dept: 'Water & Sanitation', status: 'Delayed', progress: 42, budget: '₹18.2 Cr', officer: 'Anjali Rao', lat: 23.0112, lng: 72.5521 },
+    { id: 'PRJ-2155', name: 'Smart City Water Pipeline Phase 2', dept: 'Water & Sanitation', status: 'Completed', progress: 100, budget: '₹31.0 Cr', officer: 'Sanjay Kumar', lat: 23.0456, lng: 72.5234 },
+    { id: 'PRJ-2143', name: 'Airport Metro Link Elevated Track', dept: 'Transport & Roads', status: 'In Progress', progress: 29, budget: '₹88.0 Cr', officer: 'Vikram Singh', lat: 23.0678, lng: 72.5999 },
+    { id: 'PRJ-2121', name: 'Smart LED Street Lighting — City Wide', dept: 'Power & Energy', status: 'In Progress', progress: 88, budget: '₹12.8 Cr', officer: 'Ravi Shankar', lat: 23.0011, lng: 72.6100 },
+    { id: 'PRJ-2055', name: 'Smart City CCTV Surveillance Grid', dept: 'Smart City', status: 'In Progress', progress: 55, budget: '₹35.0 Cr', officer: 'Aditya Rao', lat: 23.0555, lng: 72.6200 },
+  ];
+
+  const filteredProjects = selectedDept === 'All' ? mapPins : mapPins.filter(p => p.dept === selectedDept);
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-extrabold text-sky-950">Interactive City Map</h2>
-      <p className="text-sm text-slate-500 mb-4">Click on project pins to view details about ongoing developments.</p>
+    <div className="space-y-4 h-[80vh] flex flex-col">
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-xl font-extrabold text-sky-950">Interactive City Map</h2>
+          <p className="text-sm text-slate-500">Live GIS Integration View of ongoing city developments.</p>
+        </div>
+        <select value={selectedDept} onChange={(e) => { setSelectedDept(e.target.value); setSelectedProject(null); }} className="px-4 py-2 text-sm font-bold bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer shadow-sm">
+          <option value="All">All Departments</option>
+          <option value="Transport & Roads">Transport & Roads</option>
+          <option value="Water & Sanitation">Water & Sanitation</option>
+          <option value="Power & Energy">Power & Energy</option>
+          <option value="Smart City">Smart City</option>
+        </select>
+      </div>
       
-      <div className="flex flex-col lg:flex-row gap-6 h-[500px]">
+      <div className="flex-1 flex flex-col lg:flex-row gap-6 overflow-hidden">
         {/* Map */}
         <div className={`transition-all duration-300 rounded-2xl overflow-hidden shadow-sm border border-sky-200 relative z-0 ${selectedProject ? 'w-full lg:w-2/3' : 'w-full'}`}>
-          <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
+          <MapContainer center={[23.0225, 72.5714]} zoom={12} style={{ height: '100%', width: '100%' }} zoomControl={false}>
             <TileLayer
-              attribution='&copy; OpenStreetMap'
+              attribution='&copy; OpenStreetMap contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {NEARBY_PROJECTS.map(proj => {
+            {filteredProjects.map(p => {
               const emoji = {
-                'Roads Department': '🛣️',
-                'Parks & Rec': '🌳',
-                'Water Board': '🚰',
-              }[proj.dept] || '📍';
+                'Transport & Roads': '🛣️',
+                'Water & Sanitation': '🚰',
+                'Power & Energy': '⚡',
+                'Smart City': '🏙️',
+              }[p.dept] || '📍';
               
               const customIcon = L.divIcon({
                 className: 'custom-dept-icon',
@@ -262,57 +297,94 @@ function TabMap() {
 
               return (
                 <Marker 
-                  key={proj.id} 
-                  position={[proj.lat, proj.lng]}
+                  key={p.id} 
+                  position={[p.lat, p.lng]}
                   icon={customIcon}
-                  eventHandlers={{ click: () => setSelectedProject(proj) }}
-                />
+                  eventHandlers={{ click: () => setSelectedProject(p) }}
+                >
+                  <Popup>
+                    <div className="text-center font-sans">
+                      <p className="font-extrabold text-sky-950 text-xs m-0">{p.id}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{p.status}</p>
+                    </div>
+                  </Popup>
+                </Marker>
               );
             })}
+            {selectedProject && <MapFlyTo center={[selectedProject.lat, selectedProject.lng]} />}
           </MapContainer>
         </div>
 
         {/* Details Panel */}
         {selectedProject && (
           <div className="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-sky-200 overflow-hidden flex flex-col h-full transition-all">
-            <div className="p-4 bg-sky-900 text-white flex justify-between items-start">
-              <div>
-                <span className="text-[10px] font-extrabold bg-sky-700 px-2 py-0.5 rounded uppercase">{selectedProject.id}</span>
-                <h3 className="text-lg font-extrabold mt-2 leading-tight">{selectedProject.name}</h3>
+            {/* Image Header */}
+            <div className="h-48 bg-slate-200 relative shrink-0">
+              <img src="https://images.unsplash.com/photo-1541888087405-ebdb17d9e486?auto=format&fit=crop&w=800&q=80" alt="Construction site" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-sky-950/90 to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-extrabold bg-sky-500 text-white px-2 py-0.5 rounded uppercase">{selectedProject.id}</span>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase ${selectedProject.status === 'Completed' ? 'bg-emerald-500 text-white' : selectedProject.status === 'Delayed' ? 'bg-rose-500 text-white' : 'bg-amber-400 text-amber-950'}`}>{selectedProject.status}</span>
+                </div>
+                <h3 className="text-lg font-extrabold text-white leading-tight">{selectedProject.name}</h3>
               </div>
-              <button onClick={() => setSelectedProject(null)} className="text-sky-200 hover:text-white text-xl">✕</button>
+              <button onClick={() => setSelectedProject(null)} className="absolute top-4 right-4 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 cursor-pointer">✕</button>
             </div>
             
-            <div className="p-5 flex-1 overflow-y-auto space-y-5">
-              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                <span className="text-xs font-extrabold text-slate-500 uppercase">Status</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  selectedProject.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                }`}>{selectedProject.status}</span>
+            {/* Details Content */}
+            <div className="p-5 flex-1 overflow-y-auto space-y-6">
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-sky-50 rounded-lg p-3">
+                  <p className="text-[10px] font-extrabold text-sky-600 uppercase mb-1">Tender Budget</p>
+                  <p className="text-lg font-extrabold text-sky-950">{selectedProject.budget}</p>
+                </div>
+                <div className="bg-emerald-50 rounded-lg p-3">
+                  <p className="text-[10px] font-extrabold text-emerald-600 uppercase mb-1">Completion</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-extrabold text-emerald-950">{selectedProject.progress}%</p>
+                    <div className="h-1.5 flex-1 bg-emerald-200 rounded-full"><div className="h-full bg-emerald-600 rounded-full" style={{ width: `${selectedProject.progress}%` }}/></div>
+                  </div>
+                </div>
               </div>
               
+              {/* Stakeholders */}
               <div>
-                <p className="text-[10px] font-extrabold text-slate-500 uppercase mb-1">Department</p>
-                <p className="text-sm font-bold text-sky-950">{selectedProject.dept}</p>
-              </div>
-              
-              <div>
-                <p className="text-[10px] font-extrabold text-slate-500 uppercase mb-1">Distance from you</p>
-                <p className="text-sm font-bold text-sky-950">{selectedProject.distance}</p>
+                <h4 className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-3">Project Stakeholders</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div>
+                      <p className="text-xs font-bold text-sky-950">Dept: {selectedProject.dept}</p>
+                      <p className="text-[10px] text-slate-500">Supervising Authority</p>
+                    </div>
+                    <span className="text-[10px] bg-sky-100 text-sky-700 font-bold px-2 py-0.5 rounded">Gov</span>
+                  </div>
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div>
+                      <p className="text-xs font-bold text-sky-950">{selectedProject.officer}</p>
+                      <p className="text-[10px] text-slate-500">Nodal Officer</p>
+                    </div>
+                    <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Lead</span>
+                  </div>
+                </div>
               </div>
 
+              {/* Photos Preview */}
               <div>
-                <p className="text-[10px] font-extrabold text-slate-500 uppercase mb-1">Progress</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="h-2 flex-1 bg-sky-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-sky-500 rounded-full transition-all" style={{ width: `${selectedProject.progress}%` }} />
+                <h4 className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-3">Site Photos (Last 7 Days)</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=300&q=80" className="w-full h-16 object-cover rounded shadow-sm border border-slate-200 cursor-pointer hover:opacity-80" />
+                  <img src="https://images.unsplash.com/photo-1504307651254-35680f356f58?auto=format&fit=crop&w=300&q=80" className="w-full h-16 object-cover rounded shadow-sm border border-slate-200 cursor-pointer hover:opacity-80" />
+                  <div className="w-full h-16 bg-slate-100 rounded border border-slate-200 border-dashed flex flex-col items-center justify-center text-slate-400 cursor-pointer hover:bg-slate-50 hover:text-sky-600">
+                    <span className="text-lg">+</span>
+                    <span className="text-[8px] font-bold">More</span>
                   </div>
-                  <span className="text-xs font-bold text-sky-700">{selectedProject.progress}%</span>
                 </div>
               </div>
               
               <button className="w-full py-2.5 bg-sky-50 text-sky-700 border border-sky-200 font-bold rounded-lg text-sm hover:bg-sky-100 transition mt-4">
-                View Full Summary
+                View Full Public Summary
               </button>
             </div>
           </div>
